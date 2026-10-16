@@ -1,0 +1,17 @@
+# Opt-in overlay for the synthetic demo (docs/demo.md, issue #142): passes the
+# AI keys from the root .env to the backend (chat) and the worker (voice-note
+# transcription, media classification, lab extraction, daily analysis), so the
+# demo WhatsApp import fills «Pendientes». Local only; the plain stack stays
+# keyless. Use it only with the demo data (scripts.demo_seed): with these keys
+# any import or chat in the local stack calls the real APIs.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d
+services:
+  backend:
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+  worker:
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}

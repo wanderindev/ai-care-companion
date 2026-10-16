@@ -1,0 +1,44 @@
+[project]
+name = "n16chat-api"
+version = "0.1.0"
+description = "API for n16chat, the family medical-records app"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade (modern Python syntax)
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "scripts"]
+# backend/alembic/ (migrations dir) shadows the package name; it is third-party.
+known-third-party = ["alembic"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401"]  # Allow unused imports in tests
+# Reuses test_labs' fixtures by importing them (pytest finds them by name).
+"tests/test_lab_upload.py" = ["F811"]
+"tests/test_lab_links.py" = ["F811"]
+"alembic/*" = ["F401"]  # Allow unused imports in migrations
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

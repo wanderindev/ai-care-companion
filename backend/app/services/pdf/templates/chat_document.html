@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{#
+  A document generated from the chat (DESIGN §6.6 generate_pdf), built by
+  app.services.pdf.chat_document:
+    title, patient_name (display name or None), generated (Panamá date/time),
+    sections: [DocSection(heading, markdown, table: DocTable(columns, rows))]
+#}
+{% block styles %}
+  .doc-header { border-bottom: 2px solid #0f172a; padding-bottom: 0.15cm; margin-bottom: 0.3cm; }
+  .doc-title { text-transform: none; letter-spacing: 0; }
+  .doc-meta { color: #475569; font-size: 11pt; margin-top: 0.05cm; }
+  .section { margin-top: 0.4cm; }
+  .section-title { text-transform: none; letter-spacing: 0; }
+  .markdown { overflow-wrap: anywhere; }
+  .markdown h1 { font-size: 14pt; margin: 0.2cm 0 0.1cm 0; }
+  .markdown h2 { font-size: 13pt; margin: 0.2cm 0 0.1cm 0; }
+  .markdown h3, .markdown h4, .markdown h5, .markdown h6 {
+    font-size: 12pt; margin: 0.15cm 0 0.05cm 0;
+  }
+  .markdown ul, .markdown ol { padding-left: 0.6cm; }
+  .markdown blockquote { margin: 0.1cm 0; padding-left: 0.3cm; border-left: 3px solid #cbd5e1; }
+  .markdown code, .markdown pre { font-family: "DejaVu Sans Mono", monospace; font-size: 10pt; }
+  .markdown pre { white-space: pre-wrap; }
+  table.data { width: 100%; font-size: 10.5pt; }
+  table.data thead { display: table-header-group; }
+  table.data td { white-space: pre-line; }
+{% endblock %}
+
+{% block content %}
+<header class="doc-header">
+  <h1 class="doc-title">{{ title }}</h1>
+  {% if patient_name %}<p class="doc-subtitle">{{ patient_name }}</p>{% endif %}
+  <p class="doc-meta">Generado el {{ generated }}</p>
+</header>
+
+{% for section in sections %}
+<section class="section">
+  {% if section.heading %}<h2 class="section-title">{{ section.heading }}</h2>{% endif %}
+  {% if section.markdown %}<div class="markdown">{{ section.markdown | markdown }}</div>{% endif %}
+  {% if section.table %}
+  <div class="markdown">
+    <table class="data">
+      <thead>
+        <tr>{% for column in section.table.columns %}<th>{{ column }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for row in section.table.rows %}
+        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

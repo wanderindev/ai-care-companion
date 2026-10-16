@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{#
+  The printed medication list (DESIGN §6.4), built by app.services.pdf.meds:
+    patient_name, id_number (or None), since (date or None),
+    sections: [{label, items: [snapshot item + quantity_text, days_text,
+               starts_on, ends_on]}] (non-empty slots, printed-sheet order),
+    avoid: [{substance, reason}], list_note (markdown or None)
+#}
+{% block styles %}
+  /* Denser than base.html (#97): the list is taped to the wall where the pill
+     boxes are filled, so a long list must stay within two Letter pages. Same
+     sizes for every patient; nothing below 10 pt. */
+  @page { margin: 1cm 1.2cm 1.3cm 1.2cm; }
+  html { font-size: 10.5pt; line-height: 1.1; }
+  .doc-header { margin-bottom: 0.1cm; }
+  .doc-title { font-size: 16pt; }
+  .doc-subtitle { font-size: 13pt; margin-top: 0; }
+  .doc-meta { font-size: 10.5pt; }
+  .section { margin-top: 0.1cm; }
+  .section-title {
+    font-size: 11.5pt;
+    border-bottom-width: 1.5px;
+    padding-bottom: 0.03cm;
+    margin-bottom: 0;
+  }
+  .items { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .items tr { break-inside: avoid; }
+  .items thead { display: table-header-group; }
+  .items th { padding: 0; text-align: left; font-weight: normal; }
+  /* An 8-letter word («cápsulas», 10 pt bold ≈ 2.3 cm) fits whole; a longer
+     one wraps inside the column (overflow-wrap), never over the details. */
+  .qty-col { width: 2.6cm; }
+  .items td {
+    padding: 0.025cm 0;
+    vertical-align: top;
+    border-bottom: 1px solid #cbd5e1;
+  }
+  .items tr:last-child td { border-bottom: none; }
+  .qty {
+    width: 2.6cm;
+    padding-right: 0.2cm;
+    overflow-wrap: anywhere;
+    font-size: 13pt;
+    font-weight: bold;
+    line-height: 1.05;
+    text-align: center;
+  }
+  .qty.long { font-size: 10pt; line-height: 1.15; }
+  .med-name { font-size: 11.5pt; }
+  .dose { font-size: 10.5pt; }
+  .med-name strong { font-weight: bold; }
+  .when { font-weight: bold; }
+  .dates { font-weight: bold; }
+  .schedule, .instructions { white-space: pre-line; }
+  .instructions { font-style: italic; }
+  .prescriber { font-size: 10pt; color: #475569; }
+  .avoid {
+    margin-top: 0.25cm;
+    border: 3px solid #0f172a;
+    padding: 0.12cm 0.25cm;
+    break-inside: avoid;
+  }
+  .avoid h2 { font-size: 15pt; font-weight: bold; letter-spacing: 0.08em; }
+  .avoid ul { margin: 0.05cm 0 0 0; padding-left: 0.5cm; }
+  .avoid li { margin-top: 0.02cm; }
+  .avoid .substance { font-size: 12.5pt; font-weight: bold; }
+  .markdown table { font-size: 10.5pt; margin: 0.08cm 0; }
+  .markdown th, .markdown td { padding: 0.04cm 0.15cm; }
+  .markdown thead { display: table-header-group; }
+  .markdown p, .markdown ul, .markdown ol { margin: 0.06cm 0; }
+  .empty { margin-top: 0.4cm; font-style: italic; }
+{% endblock %}
+
+{% block content %}
+<header class="doc-header">
+  <h1 class="doc-title">LISTA DE MEDICAMENTOS</h1>
+  <p class="doc-subtitle">{{ patient_name }}</p>
+  {% if id_number or since %}
+  <p class="doc-meta">
+    {%- if id_number %}CIP: {{ id_number }}{% endif %}
+    {%- if id_number and since %} · {% endif %}
+    {%- if since %}<strong>Desde {{ since | long_date }}</strong>{% endif -%}
+  </p>
+  {% endif %}
+  {% if ledd_text %}
+  <p class="doc-meta"><strong>{{ ledd_text }}</strong> (dosis equivalente de levodopa; aproximación de referencia)</p>
+  {% endif %}
+</header>
+
+{% for section in sections %}
+<section class="section">
+  <table class="items">
+    {#- The slot name is the table's header row, so WeasyPrint repeats it when a
+        section continues on the next page. #}
+    <colgroup><col class="qty-col"><col></colgroup>
+    <thead><tr><th colspan="2"><h2 class="section-title">{{ section.label }}</h2></th></tr></thead>
+    <tbody>
+    {% for item in section["items"] %}
+    <tr>
+      <td class="qty{% if item.quantity_text | length > 4 %} long{% endif %}">{{ item.quantity_text or "—" }}</td>
+      <td>
+        <p class="med-name"><strong>{{ item.name }}</strong>
+          {%- if item.strength %} {{ item.strength }}{% endif %}
+          {%- if item.dose_note %} <span class="dose">{{ item.dose_note }}</span>{% endif %}</p>
+        {% set when = [item.time, item.days_text] | select | join(" · ") %}
+        {% set details = when or item.starts_on or item.ends_on or item.instructions %}
+        {% set who = item.prescriber_name or item.reason %}
+        {#- «Indicado por / Motivo» (small grey type) closes the details line, or the
+            schedule note's line, so it seldom needs a line of its own (#97). #}
+        {% macro prescriber(sep) -%}
+          {%- if sep %} · {% endif %}<span class="prescriber">
+          {%- if item.prescriber_name %}Indicado por {{ item.prescriber_name }}{% endif %}
+          {%- if item.prescriber_name and item.reason %} · {% endif %}
+          {%- if item.reason %}Motivo: {{ item.reason }}{% endif -%}
+          </span>
+        {%- endmacro %}
+        {% if details or (who and not item.schedule_note) %}
+        <p>
+          {%- if when %}<span class="when">{{ when }}</span>{% endif %}
+          {%- if item.starts_on %}{% if when %} · {% endif %}<span class="dates">Empieza el {{ item.starts_on | long_date }}</span>{% endif %}
+          {%- if item.ends_on %}{% if when or item.starts_on %} · {% endif %}<span class="dates">Hasta el {{ item.ends_on | long_date }}</span>{% endif %}
+          {%- if item.instructions %}{% if when or item.starts_on or item.ends_on %} · {% endif %}<span class="instructions">{{ item.instructions }}</span>{% endif %}
+          {%- if who and not item.schedule_note %}{{ prescriber(details) }}{% endif -%}
+        </p>
+        {% endif %}
+        {% if item.schedule_note %}<p><span class="schedule">{{ item.schedule_note }}</span>
+          {%- if who %}{{ prescriber(true) }}{% endif %}</p>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}
+
+{% if not sections %}
+<p class="empty">No hay medicamentos activos en esta lista.</p>
+{% endif %}
+
+{% if avoid %}
+<section class="avoid">
+  <h2>EVITAR</h2>
+  <ul>
+    {% for row in avoid %}
+    <li><span class="substance">{{ row.substance }}</span>{% if row.reason %} — {{ row.reason }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if list_note %}
+<section class="section">
+  <h2 class="section-title">Notas de la lista</h2>
+  <div class="markdown">{{ list_note | markdown }}</div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,79 @@
+# Production stack, run from ~/n16chat on the shared `pic` droplet next to a
+# .env (chmod 600, never tracked; see .env.example). Images are pushed to GHCR
+# by .github/workflows/deploy.yml; pic-watchtower (defined in the pic
+# project's compose file) pulls new :latest images and recreates these
+# containers by `container_name`. The edge nginx (pic-frontend) terminates TLS
+# for app.example.com and proxies to n16chat-frontend:80 / n16chat-backend:8000
+# over the external `shared-web` network. Full runbook: docs/deploy.md.
+#
+# Service names are prefixed (`n16chat-*`) because other projects on
+# shared-web already have services called `backend` / `frontend`, and compose
+# registers service names as DNS aliases on the network.
+#
+# Migrations are applied by hand, never on start:
+#   docker compose -f docker-compose.prod.yml run --rm n16chat-backend alembic upgrade head
+
+name: n16chat
+
+services:
+  n16chat-backend:
+    image: ghcr.io/wanderindev/n16chat-backend:latest
+    container_name: n16chat-backend
+    restart: unless-stopped
+    # Image CMD: uvicorn with 2 workers on :8000 (docker/backend/Dockerfile.prod).
+    expose:
+      - "8000"
+    env_file:
+      - .env
+    mem_limit: 384m
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=4)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Background jobs worker (backend/app/worker.py): polls the `jobs` table
+  # (migration 0005) and touches a heartbeat file from a side thread. Same
+  # image as the backend; one process, DB pool 2 + 2 like each API worker.
+  n16chat-worker:
+    image: ghcr.io/wanderindev/n16chat-backend:latest
+    container_name: n16chat-worker
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - .env
+    mem_limit: 256m
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/n16chat-worker.heartbeat') > 120)"
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  n16chat-frontend:
+    image: ghcr.io/wanderindev/n16chat-frontend:latest
+    container_name: n16chat-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  default:
+    external: true
+    name: shared-web

@@ -1,0 +1,128 @@
+# Local development stack. Host ports are chosen to avoid the operator's other
+# compose stacks (panama-in-context: 5173/8000/5433; atelier-loyalty-app: 5433):
+#   frontend  http://localhost:5180   (Vite dev server, proxies /api to backend)
+#   backend   http://localhost:8010   (FastAPI, /api/v1/health, /docs)
+#   db        localhost:5434          (PostgreSQL 17, user/db n16chat, password localdev)
+#   minio     localhost:9010 (S3 API) / :9011 (console), user n16chat, password localdev-minio
+# Production: docker-compose.prod.yml (see docs/deploy.md).
+name: n16chat
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=n16chat
+      - POSTGRES_PASSWORD=localdev
+      - POSTGRES_DB=n16chat
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n16chat -d n16chat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible stand-in for DO Spaces (attachments); console at :9011.
+  # The official minio/minio and minio/mc images are no longer pullable from
+  # Docker Hub, so this uses Bitnami's frozen (legacy) MinIO build, which also
+  # creates the private `n16chat` bucket on start (MINIO_DEFAULT_BUCKETS).
+  minio:
+    image: bitnamilegacy/minio:2025.7.23
+    environment:
+      - MINIO_ROOT_USER=n16chat
+      - MINIO_ROOT_PASSWORD=localdev-minio
+      - MINIO_DEFAULT_BUCKETS=n16chat
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    volumes:
+      - minio_data:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      - DATABASE_URL=postgresql://n16chat:localdev@db:5432/n16chat
+      - ENVIRONMENT=development
+      - DEBUG=true
+      # MinIO (above). The backend talks to minio:9000; presigned URLs are
+      # signed for the browser-facing localhost:9010.
+      - DO_SPACES_KEY=n16chat
+      - DO_SPACES_SECRET=localdev-minio
+      - DO_SPACES_BUCKET=n16chat
+      - DO_SPACES_ENDPOINT=http://minio:9000
+      - DO_SPACES_PUBLIC_ENDPOINT=http://localhost:9010
+      - DO_SPACES_REGION=us-east-1
+    ports:
+      - "8010:8000"
+    volumes:
+      # Mount source for hot reload
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+      - ./backend/alembic:/app/alembic
+      - ./backend/scripts:/app/scripts
+    # Apply migrations, then serve with reload.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # Background jobs worker (backend/app/worker.py): same image and settings as
+  # the backend. No hot reload: `docker compose restart worker` after editing
+  # job code. Starts after the backend so its migrations have run.
+  worker:
+    build:
+      context: ./backend
+    environment:
+      - DATABASE_URL=postgresql://n16chat:localdev@db:5432/n16chat
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DO_SPACES_KEY=n16chat
+      - DO_SPACES_SECRET=localdev-minio
+      - DO_SPACES_BUCKET=n16chat
+      - DO_SPACES_ENDPOINT=http://minio:9000
+      - DO_SPACES_PUBLIC_ENDPOINT=http://localhost:9010
+      - DO_SPACES_REGION=us-east-1
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/scripts:/app/scripts
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      # Vite proxies /api to this target (see frontend/vite.config.js).
+      - API_PROXY_TARGET=http://backend:8000
+    ports:
+      - "5180:5180"
+    volumes:
+      # Mount source for hot reload
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  minio_data:

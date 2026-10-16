@@ -1,0 +1,84 @@
+<!doctype html>
+{#
+  Shared print layout (app/services/pdf). Context:
+    title        <title> of the PDF
+    footer_text  left side of the running footer (e.g. «Impreso el … · Versión 3»)
+  Blocks: `styles` (extra CSS), `content`.
+  Markdown fragments use the `markdown` filter; everything else is escaped.
+#}
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>{{ title }}</title>
+<style>
+  @page {
+    size: letter;
+    margin: 1.2cm 1.5cm 1.6cm 1.5cm;
+    @bottom-left {
+      content: element(footer);
+      vertical-align: top;
+    }
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+      font-family: "DejaVu Sans", sans-serif;
+      font-size: 9.5pt;
+      color: #475569;
+      vertical-align: top;
+    }
+  }
+  html {
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 12pt;
+    line-height: 1.25;
+    color: #0f172a;
+  }
+  body { margin: 0; }
+  .running-footer {
+    position: running(footer);
+    font-size: 9.5pt;
+    color: #475569;
+  }
+  h1, h2, h3 { margin: 0; line-height: 1.2; }
+  p { margin: 0; }
+  .doc-header { margin-bottom: 0.2cm; }
+  .doc-title {
+    font-size: 18pt;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+  }
+  .doc-subtitle { font-size: 15pt; font-weight: bold; margin-top: 0.05cm; }
+  .doc-meta { font-size: 12.5pt; }
+  .section { margin-top: 0.25cm; }
+  .section-title {
+    font-size: 13pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 0.06cm;
+    margin-bottom: 0.04cm;
+    break-after: avoid;
+  }
+  .markdown table {
+    border-collapse: collapse;
+    margin: 0.15cm 0;
+    font-size: 11.5pt;
+  }
+  .markdown th, .markdown td {
+    border: 1px solid #475569;
+    padding: 0.08cm 0.18cm;
+    text-align: left;
+    vertical-align: top;
+  }
+  .markdown th { background: #e2e8f0; font-weight: bold; }
+  .markdown tr { break-inside: avoid; }
+  .markdown p, .markdown ul, .markdown ol { margin: 0.1cm 0; }
+  .markdown a { color: inherit; text-decoration: none; }
+  {% block styles %}{% endblock %}
+</style>
+</head>
+<body>
+  <div class="running-footer">{{ footer_text }}</div>
+  {% block content %}{% endblock %}
+</body>
+</html>

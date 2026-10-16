@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>n16chat Sincronizar: opciones</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+  </head>
+  <body class="options">
+    <header class="brand"><img class="logo" src="../shared/logo.svg" alt="n16chat" /></header>
+    <h1>Sincronizar: opciones</h1>
+    <form id="form">
+      <label>
+        Dirección de la API
+        <input id="apiBase" type="url" required />
+        <small>Normalmente <code>https://app.example.com/api/v1</code>. Solo se permite app.example.com (https) o un servidor local (localhost / 127.0.0.1).</small>
+      </label>
+      <label>
+        Clave de la extensión
+        <input id="token" type="password" autocomplete="off" placeholder="n16x_…" />
+        <small id="token-hint">En n16chat: «Importar WhatsApp» → «Extensión de Chrome» → «Generar clave». Se guarda solo en este navegador.</small>
+      </label>
+      <label>
+        Nombre del grupo de WhatsApp (exacto)
+        <input id="groupName" type="text" required />
+      </label>
+      <label class="check">
+        <input id="dryRun" type="checkbox" />
+        Modo de prueba: exporta y busca los archivos, pero no sube nada
+      </label>
+      <label>
+        Archivos por sincronización (máximo)
+        <input id="maxFiles" type="number" min="1" max="200" step="1" />
+      </label>
+      <label>
+        Reintentar archivos que faltan de los últimos (días, 1–30)
+        <input id="retryDays" type="number" min="1" max="30" step="1" />
+      </label>
+      <label>
+        Páginas del chat a recorrer hacia atrás (máximo)
+        <input id="maxPages" type="number" min="1" max="200" step="1" />
+      </label>
+      <label>
+        Orden de las fechas en WhatsApp Web
+        <select id="dateOrder">
+          <option value="auto">Automático</option>
+          <option value="mdy">Mes/día/año</option>
+          <option value="dmy">Día/mes/año</option>
+        </select>
+      </label>
+      <div class="actions">
+        <button class="primary" type="submit">Guardar</button>
+        <button id="test" type="button">Probar conexión</button>
+      </div>
+      <p id="status" role="status"></p>
+    </form>
+    <section class="skips">
+      <p id="skip-count" class="detail"></p>
+      <button id="clear-skips" type="button">Reintentar archivos omitidos</button>
+      <small class="detail">Vuelve a intentar en la próxima sincronización los archivos que una sincronización anterior no pudo localizar o subir (útil tras actualizar la extensión).</small>
+      <p id="skip-status" role="status"></p>
+    </section>
+    <p class="detail">Origen de esta extensión para <code>EXTENSION_ORIGINS</code>: <code id="origin"></code></p>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

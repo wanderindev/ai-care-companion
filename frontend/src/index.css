@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #106c69; /* the logo teal */
+  --color-brand-800: #115e59;
+}
+
+/* Height of the sticky app header: sticky section headers (calendar days) sit below it. */
+:root {
+  --app-header-h: calc(4.0625rem + env(safe-area-inset-top));
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Bottom sheet (phones) / right drawer (lg) and dialogs: a short entrance. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes slide-left {
+  from {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-backdrop,
+  .dialog-panel {
+    animation: fade-in 150ms ease-out;
+  }
+  .sheet-panel {
+    animation: slide-up 200ms ease-out;
+  }
+  @media (min-width: 1024px) {
+    .sheet-panel {
+      animation-name: slide-left;
+    }
+  }
+}
+
+/* Rendered markdown (indications, family notes); preflight resets these. */
+.md {
+  overflow-wrap: anywhere;
+}
+.md > * + * {
+  margin-top: 0.75em;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-weight: 600;
+}
+.md h1 {
+  font-size: 1.25rem;
+}
+.md h2 {
+  font-size: 1.125rem;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.md li + li {
+  margin-top: 0.25em;
+}
+.md a {
+  color: var(--color-brand-700);
+  text-decoration: underline;
+}
+.md blockquote {
+  border-left: 3px solid var(--color-slate-300);
+  padding-left: 0.75rem;
+  color: var(--color-slate-600);
+}
+.md code {
+  background: var(--color-slate-100);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  font-size: 0.9em;
+}
+.md pre {
+  background: var(--color-slate-100);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  overflow-x: auto;
+}
+/* GFM tables (opt-in, e.g. a medication list's regimen table): scroll sideways on phones. */
+.md table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.md th,
+.md td {
+  border: 1px solid var(--color-slate-300);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  vertical-align: top;
+}
+.md th {
+  background: var(--color-slate-100);
+  font-weight: 600;
+}
+
+/*
+ * Horizontally scrolling chip rows on phones (Bitácora / Labs filters): no
+ * scrollbar (Android Chrome draws a grey line under the row) and a fade on the
+ * right edge so a cut-off chip reads as "more to scroll". Where scroll-driven
+ * animations exist the fade goes away at the end of the row. From `lg` the
+ * chips wrap, so none of this applies. A mask never changes the layout.
+ */
+@property --chip-fade {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes chip-fade-out {
+  85% {
+    --chip-fade: 2rem;
+  }
+  to {
+    --chip-fade: 0px;
+  }
+}
+@media (max-width: 1023.98px) {
+  .chip-scroll {
+    --chip-fade: 2rem;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--chip-fade)), transparent);
+  }
+  .chip-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  @supports (animation-timeline: scroll()) {
+    .chip-scroll {
+      animation: chip-fade-out linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+}

@@ -1,0 +1,31 @@
+# Build context for the production images (docker/*/Dockerfile.prod use the
+# repo root). The dev images use backend/ and frontend/ as context and their
+# own .dockerignore files.
+
+# Never ship patient data or secrets into an image
+*.docx
+*.zip
+private/
+exports/
+**/.env
+.git/
+.github/
+.claude/
+docs/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+**/.coverage
+**/.venv/
+
+# Node
+**/node_modules/
+**/dist/
+**/dev-dist/
+# Nested too: a bare pattern only matches at the context root
+**/*.zip
+**/*.docx
+backend/scripts/demo_data/

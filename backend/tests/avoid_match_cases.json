@@ -1,0 +1,41 @@
+{
+  "_comment": "EVITAR name-match table shared by backend tests/test_meds_checks.py and frontend scripts/check-avoid-matching.mjs (npm run check:meds): both matchers must agree on every case. Synthetic data only.",
+  "match": [
+    ["ibuprofeno", "Ibuprofeno 400 mg"],
+    ["ibuprofeno", "IBUPROFENO"],
+    ["Ibuprofeno", "ibuprofeno"],
+    ["ibuprofeno", "Advil 200 mg"],
+    ["Advil", "Ibuprofeno"],
+    ["Motrin", "advil"],
+    ["Acetaminofén", "ACETAMINOFEN"],
+    ["Paracetamol", "Tylenol 500 mg"],
+    ["Aspirina", "Ácido acetilsalicílico 100 mg"],
+    ["ácido acetilsalicílico", "Aspirina"],
+    ["Ibuprofeno (Advil)", "Motrin"],
+    ["Naproxeno / Diclofenaco", "Diclofenaco 50 mg"],
+    ["AINE", "Aine"],
+    ["Sustancia X", "sustancia-x 10 mg"],
+    ["Aspirina", "Aspirina™ 81 mg"],
+    ["Paracetamol", "Tylenol® 500 mg"],
+    ["Tylenol™", "Acetaminofén"],
+    ["Aspirina 100 mg", "Aspirina 81 mg"],
+    ["Aspirina 100 mg", "Ácido acetilsalicílico"],
+    ["Ibuprofeno 400mg (Advil)", "Motrin 200 mg"],
+    ["aspirina", "Aspirinas"],
+    ["AINE", "AINEs"],
+    ["Sustancia X", "Sustancia Xs"],
+    ["antiinflamatorio", "Antiinflamatorios"],
+    ["Ácido acetilsalicílico", "Acido acetilsalicilicos"]
+  ],
+  "no_match": [
+    ["AINE", "Gabapentina"],
+    ["AINE", "Prednisona"],
+    ["ibuprofeno", "Ibuprofenol sintético"],
+    ["Paracetamol", "Ibuprofeno"],
+    ["Sustancia X", "Sustancia"],
+    ["A / B", "A B"],
+    ["", "Medicina A"],
+    ["Aspirina 100 mg", "Medicina A 100 mg"],
+    ["aspirina", "Aspirinasa"]
+  ]
+}

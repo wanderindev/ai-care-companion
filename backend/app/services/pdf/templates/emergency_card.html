@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{#
+  «Tarjeta de emergencia» (DESIGN §6.6, ticket #34): ONE Letter page, large
+  type, EVITAR prominent. Built by app.services.pdf.summaries.emergency_context:
+    c: EmergencyCard (app.services.emergency_card), name (full name or
+    display name), updated (long date),
+    c.med_groups: [MedGroup(name, doses)] (one line per medication)
+  One page for a typical list (≈16 medications on two slots each, 8 doctors). Nothing is cut:
+  a longer list flows to a second page; identification, EVITAR, diagnoses
+  and doctors come first, so they stay on page 1.
+#}
+{% block styles %}
+  @page { margin: 1cm 1.2cm 1.3cm 1.2cm; }
+  html { font-size: 12pt; }
+  .card-head { border-bottom: 3px solid #0f172a; padding-bottom: 0.12cm; }
+  .card-title { font-size: 20pt; font-weight: bold; letter-spacing: 0.04em; }
+  .updated { font-size: 11pt; color: #334155; }
+  .who { margin-top: 0.15cm; }
+  .who .name { font-size: 19pt; font-weight: bold; }
+  .who .ids { font-size: 15pt; margin-top: 0.05cm; }
+  .who .ids strong { font-size: 16pt; }
+  .avoid {
+    margin-top: 0.25cm; border: 4px solid #0f172a; padding: 0.12cm 0.3cm;
+  }
+  .avoid h2 { font-size: 18pt; letter-spacing: 0.1em; }
+  .avoid ul { margin: 0.05cm 0 0 0; padding-left: 0.55cm; }
+  .avoid li { font-size: 14pt; }
+  .avoid .substance { font-weight: bold; }
+  .block { margin-top: 0.25cm; }
+  .block h2 {
+    font-size: 13pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.03em;
+    border-bottom: 2px solid #0f172a; margin-bottom: 0.06cm;
+  }
+  .diagnoses { white-space: pre-line; font-size: 13pt; }
+  table.meds { width: 100%; border-collapse: collapse; font-size: 10.5pt; line-height: 1.15; }
+  table.meds tr { break-inside: avoid; }
+  table.meds td { padding: 0.02cm 0.1cm; border-bottom: 1px solid #cbd5e1; vertical-align: top; }
+  table.meds .med { font-weight: bold; width: 42%; }
+  table.meds .when { color: #1e293b; }
+  table.docs { width: 100%; border-collapse: collapse; font-size: 12pt; }
+  table.docs td { padding: 0.03cm 0.1cm; border-bottom: 1px solid #cbd5e1; vertical-align: top; }
+  table.docs .phone { font-weight: bold; font-size: 13pt; white-space: nowrap; text-align: right; }
+  .empty { font-style: italic; color: #475569; }
+{% endblock %}
+
+{% block content %}
+<header class="card-head">
+  <h1 class="card-title">TARJETA DE EMERGENCIA</h1>
+  <p class="updated">Actualizada el {{ updated }}</p>
+  <div class="who">
+    <p class="name">{{ name }}</p>
+    <p class="ids">
+      {%- if c.id_number %}CIP: <strong>{{ c.id_number }}</strong>{% endif %}
+      {%- if c.id_number and c.birth_date %} · {% endif %}
+      {%- if c.birth_date %}Nacimiento: {{ c.birth_date | long_date }}{% if c.age is not none %} ({{ c.age }} años){% endif %}{% endif -%}
+    </p>
+  </div>
+</header>
+
+<section class="avoid">
+  <h2>EVITAR</h2>
+  {% if c.avoid %}
+  <ul>
+    {% for a in c.avoid %}
+    <li><span class="substance">{{ a.substance }}</span>{% if a.reason %} — {{ a.reason }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Nada registrado en la lista EVITAR.</p>
+  {% endif %}
+</section>
+
+<section class="block">
+  <h2>Diagnósticos</h2>
+  {% if c.diagnoses %}<p class="diagnoses">{{ c.diagnoses }}</p>
+  {% else %}<p class="empty">No registrados.</p>{% endif %}
+</section>
+
+<section class="block">
+  <h2>Médicos</h2>
+  {% if c.doctors %}
+  <table class="docs">
+    {% for d in c.doctors %}
+    <tr>
+      <td><strong>{{ d.name }}</strong>{% if d.specialty %} · {{ d.specialty }}{% endif %}</td>
+      <td class="phone">{{ d.phone or "" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="empty">No hay médicos registrados.</p>
+  {% endif %}
+</section>
+<section class="block">
+  <h2>Medicamentos actuales</h2>
+  {% if c.med_groups %}
+  <table class="meds">
+    {% for m in c.med_groups %}
+    <tr>
+      <td class="med">{{ m.name }}</td>
+      <td class="when">{{ m.doses | join("; ") }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="empty">No hay medicamentos activos.</p>
+  {% endif %}
+</section>
+
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{#
+  «Resumen pre-consulta» (DESIGN §6.6, ticket #34), built by
+  app.services.pdf.summaries.previsit_context:
+    s: PrevisitSummary (app.services.previsit), doctor_line,
+    meds: [{name, quantity, dose_note, slot, time, instructions, schedule_note}]
+  Out-of-range lab values are bold AND say «Alto» / «Bajo» / «Anormal»
+  (never color only).
+#}
+{% block styles %}
+  .doc-header { border-bottom: 2px solid #0f172a; padding-bottom: 0.15cm; margin-bottom: 0.2cm; }
+  .doc-meta { margin-top: 0.08cm; }
+  .section { margin-top: 0.45cm; }
+  .section-title { text-transform: none; letter-spacing: 0; }
+  .muted { color: #475569; }
+  .empty { font-style: italic; color: #475569; margin-top: 0.1cm; }
+  .entry { margin-top: 0.22cm; padding-bottom: 0.15cm; border-bottom: 1px solid #cbd5e1; }
+  .entry-head { font-size: 12pt; }
+  .entry-head .date { font-weight: bold; }
+  .own-mark { font-weight: bold; border: 1.5px solid #0f172a; padding: 0 0.1cm; font-size: 10pt; }
+  .entry-title { font-weight: bold; }
+  .label { font-weight: bold; font-size: 10.5pt; margin-top: 0.08cm; }
+  .markdown { overflow-wrap: anywhere; font-size: 11.5pt; }
+  .markdown ul, .markdown ol { padding-left: 0.6cm; }
+  ul.plain { margin: 0.1cm 0 0 0; padding-left: 0.5cm; }
+  ul.plain li { margin-top: 0.06cm; }
+  table.grid { width: 100%; border-collapse: collapse; font-size: 11pt; margin-top: 0.1cm; }
+  table.grid th, table.grid td {
+    border: 1px solid #475569; padding: 0.06cm 0.15cm; text-align: left; vertical-align: top;
+  }
+  table.grid th { background: #e2e8f0; }
+  table.grid thead { display: table-header-group; }
+  table.grid tr { break-inside: avoid; }
+  tr.out td { font-weight: bold; }
+  .flag { font-weight: bold; }
+  .report-head { margin-top: 0.25cm; font-weight: bold; break-after: avoid; }
+  .avoid {
+    margin-top: 0.3cm; border: 3px solid #0f172a; padding: 0.15cm 0.3cm; break-inside: avoid;
+  }
+  .avoid h3 { font-size: 14pt; letter-spacing: 0.08em; }
+  .questions .line { border-bottom: 1px solid #475569; height: 0.95cm; }
+  .questions { break-inside: avoid; }
+{% endblock %}
+
+{% block content %}
+<header class="doc-header">
+  <h1 class="doc-title">RESUMEN PRE-CONSULTA</h1>
+  <p class="doc-subtitle">{{ s.patient_name }} · {{ doctor_line }}</p>
+  <p class="doc-meta">
+    {% if s.last_visit %}
+    <strong>Desde la última consulta con este médico: {{ s.last_visit | long_date }}</strong>
+    {% else %}
+    <strong>No hay consultas anteriores con este médico en la bitácora:</strong>
+    últimos 12 meses (desde el {{ s.period_from | long_date }})
+    {% endif %}
+  </p>
+  <p class="doc-meta muted">Generado el {{ s.today | long_date }}</p>
+</header>
+
+<section class="section">
+  <h2 class="section-title">Bitácora desde el {{ s.period_from | long_date }}
+    ({{ s.entries_total }} {{ "entrada" if s.entries_total == 1 else "entradas" }})</h2>
+  {% if s.entries_total > s.entries | length %}
+  <p class="muted">Se muestran las {{ s.entries | length }} más recientes de {{ s.entries_total }}.</p>
+  {% endif %}
+  {% for e in s.entries %}
+  <div class="entry">
+    <p class="entry-head">
+      <span class="date">{{ e.date | long_date }}</span> · {{ e.type_label }}
+      {%- if e.who %} · {{ e.who }}{% endif %}
+      {% if e.own %} <span class="own-mark">ESTE MÉDICO</span>{% endif %}
+      {% if e.pending_review %} <span class="muted">(sin revisar)</span>{% endif %}
+    </p>
+    {% if e.title %}<p class="entry-title">{{ e.title }}</p>{% endif %}
+    {% if e.indications %}
+    <p class="label">Indicaciones</p>
+    <div class="markdown">{{ e.indications | markdown }}</div>
+    {% endif %}
+    {% if e.family_notes %}
+    <p class="label">Notas de la familia</p>
+    <div class="markdown">{{ e.family_notes | markdown }}</div>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="empty">No hay entradas en este período.</p>
+  {% endfor %}
+</section>
+
+<section class="section">
+  <h2 class="section-title">Cambios de medicamentos en el período</h2>
+  {% if s.med_changes %}
+  <ul class="plain">
+    {% for c in s.med_changes %}
+    <li><strong>{{ c.date | long_date }}</strong> — {{ c.text }}
+      {%- if c.pending_review %} <span class="muted">(sin revisar)</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No hay cambios registrados en este período.</p>
+  {% endif %}
+</section>
+
+<section class="section">
+  <h2 class="section-title">Medicamentos actuales</h2>
+  {% if meds %}
+  <table class="grid">
+    <thead><tr><th>Horario</th><th>Medicamento</th><th>Cantidad</th><th>Indicaciones</th></tr></thead>
+    <tbody>
+      {% for m in meds %}
+      <tr>
+        <td>{{ m.slot }}{% if m.time %} ({{ m.time }}){% endif %}</td>
+        <td><strong>{{ m.name }}</strong>{% if m.dose_note %} {{ m.dose_note }}{% endif %}</td>
+        <td>{{ m.quantity or "—" }}</td>
+        <td>{{ [m.instructions, m.schedule_note] | select | join(" · ") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No hay medicamentos activos en la lista.</p>
+  {% endif %}
+  {% if s.avoid %}
+  <div class="avoid">
+    <h3>EVITAR</h3>
+    <ul class="plain">
+      {% for a in s.avoid %}
+      <li><strong>{{ a.substance }}</strong>{% if a.reason %} — {{ a.reason }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <h2 class="section-title">Laboratorios en el período</h2>
+  {% if s.labs_total > s.labs | length %}
+  <p class="muted">Se muestran los {{ s.labs | length }} más recientes de {{ s.labs_total }}.</p>
+  {% endif %}
+  {% for r in s.labs %}
+  <p class="report-head">{{ r.date | long_date }}{% if r.lab_name %} · {{ r.lab_name }}{% endif %}
+    {%- if r.out_of_range %} · {{ r.out_of_range }} fuera de rango{% endif %}
+    {%- if r.pending_review %} <span class="muted">(sin revisar)</span>{% endif %}</p>
+  {% if r.results %}
+  <table class="grid">
+    <thead><tr><th>Examen</th><th>Resultado</th><th>Referencia</th><th>Estado</th></tr></thead>
+    <tbody>
+      {% for x in r.results %}
+      <tr{% if x.out_of_range %} class="out"{% endif %}>
+        <td>{{ x.name }}</td>
+        <td>{{ x.value or "—" }}{% if x.unit %} {{ x.unit }}{% endif %}</td>
+        <td>{{ x.ref or "" }}</td>
+        <td>{% if x.out_of_range %}<span class="flag">{{ x.flag_label | upper }}</span>{% elif x.flag_label %}{{ x.flag_label }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% else %}
+  <p class="empty">No hay laboratorios en este período.</p>
+  {% endfor %}
+</section>
+
+<section class="section">
+  <h2 class="section-title">Próximas citas</h2>
+  {% if s.appointments %}
+  <ul class="plain">
+    {% for a in s.appointments %}
+    <li><strong>{{ a.date | long_date }}{% if a.time %}, {{ a.time }}{% endif %}</strong>
+      {%- if a.doctor %} · {{ a.doctor }}{% endif %}
+      {%- if a.reason %} · {{ a.reason }}{% endif %}
+      {%- if a.location %} · {{ a.location }}{% endif %}
+      {%- if a.own %} <span class="own-mark">ESTE MÉDICO</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No hay citas programadas.</p>
+  {% endif %}
+</section>
+
+<section class="section questions">
+  <h2 class="section-title">Preguntas para el doctor</h2>
+  {% for _ in range(s.question_lines) %}<div class="line"></div>{% endfor %}
+</section>
+{% endblock %}

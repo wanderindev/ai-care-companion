@@ -1,0 +1,48 @@
+# FastAPI and server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# Database
+# Capped below 2.1: SQLAlchemy 2.1 resolves a bare `postgresql://` URL to the
+# psycopg 3 driver, which is not installed (same cap as panama-in-context).
+# Lift the cap only as a deliberate upgrade (psycopg 3 or `+psycopg2` URLs).
+sqlalchemy>=2.0.36,<2.1
+psycopg2-binary>=2.9.9
+alembic>=1.13.0
+
+# Validation and settings
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+
+# Uploads (multipart) and DO Spaces (S3-compatible) storage
+python-multipart>=0.0.9
+boto3>=1.35.0
+
+# Bitácora DOCX importer (scripts/import_bitacora.py): DOCX reading and the
+# Claude API for structured extraction
+python-docx>=1.2.0
+anthropic>=1.12.0
+
+# Printable PDFs (app/services/pdf/): HTML + CSS -> PDF. WeasyPrint needs
+# Pango/HarfBuzz and a font from the OS (see docker/backend/Dockerfile.prod,
+# backend/Dockerfile and the CI backend job). markdown-it-py renders list
+# notes (tables) with raw HTML disabled.
+weasyprint==70.0
+jinja2==3.1.6
+markdown-it-py==4.2.0
+
+# Chat-generated spreadsheets (app/services/chat/files.py)
+openpyxl==3.1.5
+
+# Testing (testcontainers spawns an ephemeral postgres:17-alpine)
+pytest>=8.3.0
+pytest-cov>=5.0.0
+httpx2>=2.13.0
+testcontainers>=4.15.0
+# In-process S3 mock for the storage/attachments tests
+moto[s3]>=5.0.0
+# Text extraction from the generated PDFs in tests
+pypdf==6.19.0
+
+# Linting
+ruff==0.15.15

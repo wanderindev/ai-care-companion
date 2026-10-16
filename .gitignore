@@ -1,0 +1,31 @@
+# Patient data never goes in git
+*.docx
+*.zip
+private/
+exports/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Node
+node_modules/
+dist/
+
+# Python tooling
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Vite PWA dev output
+dev-dist/
+
+# ...except the synthetic demo export (issue #142, invented data only)
+!backend/scripts/demo_data/*.zip

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>n16chat Sincronizar</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+  </head>
+  <body class="popup">
+    <header>
+      <h1><img class="logo" src="../shared/logo.svg" alt="n16chat" /></h1>
+      <span id="mode" class="badge" hidden>Modo de prueba</span>
+    </header>
+
+    <section id="unconfigured" hidden>
+      <p>Falta configurar la clave de la extensión y el nombre del grupo.</p>
+      <button id="open-options" type="button">Abrir opciones</button>
+    </section>
+
+    <section id="main" hidden>
+      <button id="sync" class="primary" type="button">Sincronizar</button>
+      <p id="phase" class="phase"></p>
+      <p id="summary" class="detail" hidden></p>
+      <p id="leftover" class="detail" hidden></p>
+      <details id="diagnostic" class="detail" hidden>
+        <summary id="diagnostic-line"></summary>
+        <pre id="diagnostic-detail" class="mono"></pre>
+      </details>
+      <p id="error" class="error" role="alert" hidden></p>
+      <p id="error-detail" class="detail mono" hidden></p>
+      <p class="links">
+        <a id="pendientes" href="#" target="_blank" rel="noopener">Ver Pendientes en n16chat</a>
+        · <a id="options-link" href="#">Opciones</a>
+      </p>
+    </section>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
