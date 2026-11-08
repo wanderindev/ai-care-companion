@@ -1,6 +1,6 @@
 # AI Care Companion (n16chat)
 
-An AI-powered medical record for families caring for elderly parents with chronic conditions. The app reads the family WhatsApp group (messages, voice notes, prescription photos, lab PDFs) and the Word documents the family already keeps, and turns them into structured records: a visit log (*bitácora*), a calendar, versioned medication lists and lab results with trends. The AI proposes every change and a family member approves it in a review queue («Pendientes»). A grounded chat answers questions and produces summaries and PDFs to hand to doctors.
+An AI-powered medical record for families caring for elderly parents with chronic conditions. The app reads the family WhatsApp group (messages, voice notes, prescription photos, lab PDFs) and the Word documents the family already keeps, and turns them into structured records: a visit log (*bitácora*), a calendar, versioned medication lists and lab results with trends. The AI proposes every change and a family member approves it in a review queue («Pendientes»). A grounded chat answers questions and produces summaries and PDFs to hand to doctors. It is in daily production use by a small family care team, who send feature requests and bug reports that ship like client work.
 
 The write-up explains the problem, the design decisions and the build: **[feliu.dev/projects/ai-care-companion](https://feliu.dev/projects/ai-care-companion)**.
 

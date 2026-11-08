@@ -2,8 +2,8 @@
 
 ## Project Overview
 
-n16chat is a private family web app that keeps two elderly parents' medical
-information in one shared place: the visit log (*bitácora*), appointments,
+n16chat is a production web app, in daily use by a small family care team, that
+keeps two elderly parents' medical information in one shared place: the visit log (*bitácora*), appointments,
 medication lists, lab results, and an AI chat over all of it. A handful of
 siblings use it, mostly from phones. `docs/DESIGN.md` is the source of truth
 for the data model, UI principles and privacy rules; `docs/deploy.md` is the

@@ -1,6 +1,7 @@
 # n16chat — Design Document
 
-Family web app to keep elderly parents' medical information in one shared place:
+Web app, in daily production use by a small family care team, to keep elderly
+parents' medical information in one shared place:
 the visit log (*bitácora*), appointments, medication lists, lab results, and a
 chat to ask questions about all of it. Built for a handful of siblings, used
 mostly from phones.
